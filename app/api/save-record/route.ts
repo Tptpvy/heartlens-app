@@ -15,6 +15,7 @@ if (!cached) {
   cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
+// Database connection setup
 async function dbConnect() {
   if (cached.conn) {
     return cached.conn;
@@ -29,7 +30,7 @@ async function dbConnect() {
   return cached.conn;
 }
 
-// Define the schema with an extra field for ppgData
+// Define schema
 const RecordSchema = new mongoose.Schema({
   subjectId: { type: String, required: true }, 
   heartRate: {

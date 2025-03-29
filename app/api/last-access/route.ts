@@ -12,6 +12,7 @@ if (!cached) {
   cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
+// Database connection setup
 async function dbConnect() {
   if (cached.conn) return cached.conn;
   if (!cached.promise) {
@@ -21,6 +22,7 @@ async function dbConnect() {
   return cached.conn;
 }
 
+// Define schema
 const RecordSchema = new mongoose.Schema({
   subjectId: { type: String, required: true },
   heartRate: { bpm: Number, confidence: Number },
@@ -31,6 +33,7 @@ const RecordSchema = new mongoose.Schema({
 
 const Record = mongoose.models.Record || mongoose.model('Record', RecordSchema);
 
+// GET handler
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const subjectId = searchParams.get('subjectId');

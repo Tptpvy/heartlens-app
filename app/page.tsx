@@ -11,8 +11,7 @@ import useMongoDB from './hooks/useMongoDB';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
-  const [isSampling, setIsSampling] = useState(false); // New state for sampling
-//  const [isUploading, setIsUploading] = useState(false);
+  const [isSampling, setIsSampling] = useState(false);
   const [signalCombination, setSignalCombination] = useState('default');
   const [showConfig, setShowConfig] = useState(false);
   const [currentSubject, setCurrentSubject] = useState('');
@@ -26,7 +25,6 @@ export default function Home() {
       setConfirmedSubject(subject);
       try {
         await handlePullData();
-//        setLastAccess(new Date().toLocaleString()); 
       } catch (error) {
         console.error('Error confirming user:', error);
       }
@@ -77,13 +75,13 @@ export default function Home() {
     };
   }, [isRecording]);
 
+  // Retrieve data from db
   const handlePullData = async () => {
     try {
       await fetchHistoricalData(confirmedSubject);
       await fetchLastAccess(confirmedSubject);
       const dateObj = new Date(lastAccessDate);
-      
-      // Format using toLocaleString with options
+      // Reformat date
       setLastAccess(dateObj.toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -100,6 +98,7 @@ export default function Home() {
   }
   }
 
+  // Store data to db
   const handlePushData = async () => {
     if (!isSampling || ppgData.length === 0) {
       alert('No data to save. Please capture data first.');
@@ -198,6 +197,7 @@ export default function Home() {
             {confirmedSubject && (
             <div className="space-y-1">
             <br></br>
+            {/* Historical Data Display */}
             <p>
               <strong>Last Access Date:</strong>
               <span className="text-gray-500 ml-1">

@@ -10,7 +10,7 @@ async function dbConnect() {
   return mongoose.connect(MONGODB_URI);
 }
 
-// Schema definition
+// Define schema
 const RecordSchema = new mongoose.Schema({
   subjectId: { type: String, required: true },
   heartRate: { bpm: Number, confidence: Number },
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     const pipeline = [
       {
         $match: { 
-          subjectId: subjectId // Ensure this matches your data type (string/number)
+          subjectId: subjectId
         }
       },
       {
@@ -52,8 +52,8 @@ export async function GET(request: Request) {
     if (result.length === 0) {
       return NextResponse.json({
         success: true,
-        avgHeartRate: -3, 
-        avgHRV: -3,
+        avgHeartRate: null, 
+        avgHRV: null,
       });
     }
     return NextResponse.json({

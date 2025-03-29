@@ -67,7 +67,7 @@ export default function useMongoDB() {
         headers: { 'Content-Type': 'application/json' },
       });
 
-      if (!response.ok) { // debug
+      if (!response.ok) { 
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -85,6 +85,7 @@ export default function useMongoDB() {
     }
   };
 
+  // GET: Fetch last access date
   const fetchLastAccess = async (subjectId: string) => {
     try {
       const url = await subjectId 

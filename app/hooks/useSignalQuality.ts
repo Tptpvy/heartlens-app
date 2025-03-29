@@ -17,7 +17,7 @@ export default function useSignalQuality(
   useEffect(() => {
     const loadModel = async () => {
       try {
-        const loadedModel = await tf.loadLayersModel('/tfjs_model/model.json');
+        const loadedModel = await tf.loadLayersModel('/tfjs_model/new_model.json');
         modelRef.current = loadedModel;
         console.log('PPG quality assessment model loaded successfully');
       } catch (error) {

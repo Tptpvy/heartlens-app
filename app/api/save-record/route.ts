@@ -31,6 +31,7 @@ async function dbConnect() {
 
 // Define the schema with an extra field for ppgData
 const RecordSchema = new mongoose.Schema({
+  subjectId: { type: String, required: true }, 
   heartRate: {
     bpm: { type: Number, required: true },
     confidence: { type: Number, required: true },
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
 
     // Create a new record including the entire ppgData array
     const newRecord = await Record.create({
+      subjectId: body.subjectId,
       heartRate: body.heartRate,
       hrv: body.hrv,
       ppgData: body.ppgData, // The whole ppgData array is posted here

@@ -7,13 +7,33 @@ import SignalCombinationSelector from './components/SignalCombinationSelector';
 import ChartComponent from './components/ChartComponent';
 import usePPGProcessing from './hooks/usePPGProcessing';
 import useSignalQuality from './hooks/useSignalQuality';
+import useMongoDB from './hooks/useMongoDB';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [isSampling, setIsSampling] = useState(false); // New state for sampling
-  const [isUploading, setIsUploading] = useState(false);
+//  const [isUploading, setIsUploading] = useState(false);
   const [signalCombination, setSignalCombination] = useState('default');
   const [showConfig, setShowConfig] = useState(false);
+  const [currentSubject, setCurrentSubject] = useState('');
+  const [confirmedSubject, setConfirmedSubject] = useState('');
+  const [lastAccess, setLastAccess] = useState('Never');
+
+  // Confirm User Function
+  const confirmUser = async () => {
+    const subject = currentSubject.trim();
+    if (subject) {
+      setConfirmedSubject(subject);
+      try {
+        await handlePullData();
+//        setLastAccess(new Date().toLocaleString()); 
+      } catch (error) {
+        console.error('Error confirming user:', error);
+      }
+    } else {
+      alert('Please enter a valid Subject ID.');
+    }
+  };
 
   // Define refs for video and canvas
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -30,6 +50,7 @@ export default function Home() {
   } = usePPGProcessing(isRecording, signalCombination, videoRef, canvasRef);
 
   const { signalQuality, qualityConfidence } = useSignalQuality(ppgData);
+  const { isUploading, pushDataToMongo, fetchHistoricalData, fetchLastAccess, historicalData, lastAccessDate } = useMongoDB();
 
   // Start or stop recording
   useEffect(() => {
@@ -56,74 +77,64 @@ export default function Home() {
     };
   }, [isRecording]);
 
-  // Automatically send data every 10 seconds
-  // Automatically send data every second when sampling is enabled
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+  const handlePullData = async () => {
+    try {
+      await fetchHistoricalData(confirmedSubject);
+      await fetchLastAccess(confirmedSubject);
+      const dateObj = new Date(lastAccessDate);
+      
+      // Format using toLocaleString with options
+      setLastAccess(dateObj.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short'
+      }));
+    } catch (error) {
+      console.error('Error fetching data:', error); // debug
+      alert('Failed to retrieve data. Please try again.');
+      setLastAccess('Never');
+  }
+  }
 
-    if (isSampling && ppgData.length > 0) {
-      intervalId = setInterval(() => {
-        pushDataToMongo();
-      }, 10000); // Send data every second
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isSampling, ppgData]);
-
-  const pushDataToMongo = async () => {
-    if (isUploading) return; // Prevent overlapping calls
-
-    setIsUploading(true); // Lock the function
-    if (ppgData.length === 0) {
-      console.warn('No PPG data to send to MongoDB');
+  const handlePushData = async () => {
+    if (!isSampling || ppgData.length === 0) {
+      alert('No data to save. Please capture data first.');
       return;
-    }
-    // Prepare the record data – adjust or add additional fields as needed
-    const recordData = {
-      heartRate: {
-        bpm: isNaN(heartRate.bpm) ? 0 : heartRate.bpm, // Replace NaN with "ERRATIC"
-        confidence: hrv.confidence || 0,
-      },
-      hrv: {
-        sdnn: isNaN(hrv.sdnn) ? 0 : hrv.sdnn, // Replace NaN with "ERRATIC"
-        confidence: hrv.confidence || 0,
-      },
-
-      ppgData: ppgData, // Use the provided ppgData array
-      timestamp: new Date(),
-    };
+    } 
 
     try {
-      // Make a POST request to your backend endpoint that handles saving to MongoDB
-      const response = await fetch('/api/save-record', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const recordData = {
+        subjectId: confirmedSubject || 'unknown',
+        heartRate: {
+          bpm: isNaN(heartRate.bpm) ? 0 : heartRate.bpm,
+          confidence: heartRate.confidence || 0,
         },
-        body: JSON.stringify(recordData),
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        console.log('✅ Data successfully saved to MongoDB:', result.data);
-      } else {
-        console.error('❌ Upload failed:', result.error);
-      }
+        hrv: {
+          sdnn: isNaN(hrv.sdnn) ? 0 : hrv.sdnn,
+          confidence: hrv.confidence || 0,
+        },
+        ppgData: ppgData,
+        timestamp: new Date(),
+        signalQuality: qualityConfidence,
+      };
+      
+      await pushDataToMongo(recordData);
+      alert('Data saved successfully!');
     } catch (error) {
-      console.error('🚨 Network error - failed to save data:', error);
-    } finally {
-      setIsUploading(false); // Unlock the function
+      alert('Failed to save data. Please try again.');
     }
   };
-
+  
   return (
     <div className="flex flex-col items-center p-4">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-4xl mb-4">
         {/* Title */}
-        <h1 className="text-3xl font-bold">HeartLen</h1>
+        <h1 className="text-3xl bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent">HeartLens</h1>
         {/* Recording Button */}
         <button
           onClick={() => setIsRecording(!isRecording)}
@@ -168,7 +179,46 @@ export default function Home() {
               setSignalCombination={setSignalCombination}
             />
           )}
-        </div>
+        <div className="bg-white p-4 rounded-lg shadow-md">
+          {/* Input Field */}
+          <input
+            type="text"
+            value={currentSubject}
+            onChange={(e) => setCurrentSubject(e.target.value)}
+            placeholder="Enter Subject ID"
+            className="border border-gray-300 rounded-md p-2"
+          />
+          {/* Confirm Button */}
+          <button
+            onClick={confirmUser}
+            className="bg-cyan-500 text-white px-4 py-2 rounded-md ml-2"
+          >
+            Confirm User
+          </button>
+            {confirmedSubject && (
+            <div className="space-y-1">
+            <br></br>
+            <p>
+              <strong>Last Access Date:</strong>
+              <span className="text-gray-500 ml-1">
+                {lastAccess === 'Never' ? 'Never' : lastAccess}
+              </span>
+            </p>
+            <p>
+              <strong>Average Heart Rate:</strong>
+              <span className="text-gray-500 ml-1">
+                {historicalData.avgHeartRate ?? 'N/A'} BPM
+              </span>
+            </p>
+            <p>
+              <strong>Average HRV:</strong>
+              <span className="text-gray-500 ml-1">
+                {historicalData.avgHRV ?? 'N/A'} ms
+              </span>
+            </p>
+          </div>
+          )}</div>
+          </div>
 
         {/* Right Column: Chart and Metrics */}
         <div className="space-y-4">
@@ -177,10 +227,13 @@ export default function Home() {
 
           {/* Save Data to MongoDB Button */}
           <button
-            onClick={pushDataToMongo}
-            className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            onClick={handlePushData}
+            disabled={isUploading}
+            className={`w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 ${
+              isUploading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            Save Data to MongoDB
+            {isUploading ? 'Saving...' : 'Save Data to MongoDB'}
           </button>
 
           {/* Metrics Cards (Side by Side) */}
@@ -201,9 +254,9 @@ export default function Home() {
 
             {/* Signal Quality Card (Fallback for now) */}
             <MetricsCard
-              title="SIGNAL QUALITY"
-              value={signalQuality || '--'} // String value for signal quality
-              confidence={qualityConfidence || 0}
+              title="Signal Quality"
+              value={Number(signalQuality)}
+              confidence={qualityConfidence}
             />
           </div>
         </div>

@@ -4,17 +4,17 @@
 
 ## Installation Instructions
 
-# Prerequisites
+### Prerequisites
 - Node.js (v18 or higher)
 - MongoDB Atlas account (or local MongoDB instance)
 
-# Connecting to MongoDB
+### Connecting to MongoDB
 To link the app to your MongoDB database:
 1. Create a MongoDB Atlas cluster or use a local MongoDB instance.
 2. Copy the connection string from MongoDB Atlas and paste it into the `.env.local` file as shown below.
 3. Ensure the database has a collection named `records` to store PPG data.
 
-# Installation Steps
+### Installation Steps
 1. Clone the repository:
 ```bash
 git clone https://github.com/Tptpvy/heartlens-app.git
@@ -38,7 +38,7 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## App Deployment
 
-# Local Deployment
+### Local Deployment
 1. Build the production version:
 ```bash
 npm run build
@@ -48,7 +48,7 @@ npm run build
 npm run start
 ```
 
-# Vercel Deployment
+### Vercel Deployment
 1. Import your GitHub repository:
 - Go to [Vercel](https://vercel.com) and sign up using your GitHub account.
 - In the Vercel dashboard, click "Add New" and select "Project."

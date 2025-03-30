@@ -35,22 +35,27 @@ const Record = mongoose.models.Record || mongoose.model('Record', RecordSchema);
 
 // GET handler
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const subjectId = searchParams.get('subjectId');
-  
-    if (!subjectId) {
-      return NextResponse.json({ success: false, error: 'Missing subjectId' });
-    }
-  
-    try {
-      await dbConnect();
-      const lastRecord = await Record.findOne({ subjectId }).sort({ timestamp: -1 });
-      if (!lastRecord) {
-        return NextResponse.json({ success: false, error: 'No records found' });
-      }
-  
-      return NextResponse.json({ success: true, lastAccess: lastRecord.timestamp });
-    } catch (error) {
-      return NextResponse.json({ success: false, error: error.message });
-    }
+  const { searchParams } = new URL(request.url);
+  const subjectId = searchParams.get('subjectId');
+
+  if (!subjectId) {
+    return NextResponse.json({ success: false, error: 'Missing subjectId' });
   }
+
+  try {
+    await dbConnect();
+    const lastRecord = await Record.findOne({ subjectId }).sort({ timestamp: -1 });
+    if (!lastRecord) {
+      return NextResponse.json({ success: false, error: 'No records found' });
+    }
+
+    return NextResponse.json({ success: true, lastAccess: lastRecord.timestamp });
+  } catch (error) {
+    // Type-safe error handling
+    let errorMessage = 'An unknown error occurred';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    return NextResponse.json({ success: false, error: errorMessage });
+  }
+}

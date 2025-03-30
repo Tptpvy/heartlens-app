@@ -39,7 +39,7 @@ export default function useSignalQuality(
       )) as tf.Tensor;
       const probabilities = await prediction.data();
 
-      const classIndex = probabilities.indexOf(Math.max(...probabilities));
+      const classIndex = Array.from(probabilities).indexOf(Math.max(...probabilities));
       const classes = ['bad', 'acceptable', 'excellent'];
       const predictedClass = classes[classIndex];
       const confidence = probabilities[classIndex] * 100;

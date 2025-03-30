@@ -17,7 +17,7 @@ export default function useSignalQuality(
   useEffect(() => {
     const loadModel = async () => {
       try {
-        const loadedModel = await tf.loadLayersModel('/tfjs_model/model.json'); // new_model.json
+        const loadedModel = await tf.loadLayersModel('/tfjs_model/model.json'); 
         modelRef.current = loadedModel;
         console.log('PPG quality assessment model loaded successfully');
       } catch (error) {
@@ -39,7 +39,7 @@ export default function useSignalQuality(
       )) as tf.Tensor;
       const probabilities = await prediction.data();
 
-      const classIndex = Array.from(probabilities).indexOf(Math.max(...probabilities));
+      const classIndex = probabilities.indexOf(Math.max(...probabilities));
       const classes = ['bad', 'acceptable', 'excellent'];
       const predictedClass = classes[classIndex];
       const confidence = probabilities[classIndex] * 100;

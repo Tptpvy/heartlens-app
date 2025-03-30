@@ -38,11 +38,14 @@ export default function Home() {
 
   // Confirm User Function
   const confirmUser = async () => {
+    console.log('button pressed'); // debug
     const subject = currentSubject.trim();
     if (subject) {
       setConfirmedSubject(subject);
+      console.log('subject set');
       try {
         await handlePullData();
+        console.log('handPullData complete');
       } catch (error) {
         console.error('Error confirming user:', error);
       }
@@ -79,19 +82,21 @@ export default function Home() {
 
   // Retrieve data from db
   const handlePullData = async () => {
-    if (!confirmedSubject) return;
-
+    if (!confirmedSubject) {
+      console.log('subject not found'); // debug
+      return;}
     try {
       await fetchHistoricalData(confirmedSubject);
-      
-      if (historicalData.avgHeartRate == null || historicalData.avgHeartRate <= -1) {
+      await fetchLastAccess(confirmedSubject);
+      console.log('fetchHistoricalData done'); // debug
+      console.log('fetchLastAccess done');
+      if (historicalData.avgHeartRate == null || historicalData.avgHeartRate <= 0) {
+        console.log('no data found for subject'); // debug
         setIsNewUser(true);
         return;
       }
-
+      console.log('subject data found'); // debug
       setIsNewUser(false);
-      await fetchLastAccess(confirmedSubject);
-      
       const dateObj = new Date(lastAccessDate);
       setLastAccess(dateObj.toLocaleString('en-US', {
         year: 'numeric',
@@ -104,7 +109,7 @@ export default function Home() {
       }))
     } catch (error) {
       console.error('Error fetching data:', error);
-      setIsNewUser(false);
+      setIsNewUser(true);
     }
   };
 
@@ -142,39 +147,46 @@ export default function Home() {
     <div className="flex flex-col items-center p-4">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-4xl mb-4">
-        {/* Title */}
-        <h1 className="text-3xl bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent">HeartLens</h1>
-        {/* Recording Button */}
-        <button
-          onClick={() => setIsRecording(!isRecording)}
-          className={`p-3 rounded-lg text-sm transition-all duration-300 ${
-            isRecording
-              ? 'bg-red-500 hover:bg-red-600 text-white'
-              : 'bg-cyan-500 hover:bg-cyan-600 text-white'
-          }`}
-        >
-          {isRecording ? '⏹ STOP' : '⏺ START'} RECORDING
-        </button>
-        {/* Sampling Button */}
-        <button
-          onClick={() => setIsSampling(!isSampling)}
-          className={`p-3 rounded-lg text-sm transition-all duration-300 ml-2 ${
-            isSampling
-              ? 'bg-green-500 hover:bg-green-600 text-white'
-              : 'bg-gray-500 hover:bg-gray-600 text-white'
-          }`}
-          disabled={!isRecording} // Enable only when recording is active
-        >
-          {isSampling ? '⏹ STOP SAMPLING' : '⏺ START SAMPLING'}
-        </button>
+        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">
+          HeartLens
+        </h1>
       </div>
-
+  
       {/* Main Grid: Camera and Chart Side by Side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
-        {/* Left Column: Camera Feed */}
+        {/* Left Column: Camera Feed, Controls, and User Input */}
         <div className="space-y-4">
           {/* Camera Feed */}
           <CameraFeed videoRef={videoRef} canvasRef={canvasRef} />
+  
+          {/* Recording Controls */}
+          <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+            {/* Recording Button */}
+            <button
+              onClick={() => setIsRecording(!isRecording)}
+              className={`p-3 rounded-lg text-sm transition-all duration-300 flex-1 ${
+                isRecording
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : 'bg-cyan-500 hover:bg-cyan-600 text-white'
+              }`}
+            >
+              {isRecording ? '⏹ STOP' : '⏺ START'} RECORDING
+            </button>
+            
+            {/* Sampling Button */}
+            <button
+              onClick={() => setIsSampling(!isSampling)}
+              className={`p-3 rounded-lg text-sm transition-all duration-300 flex-1 ${
+                isSampling
+                  ? 'bg-green-500 hover:bg-green-600 text-white'
+                  : 'bg-gray-500 hover:bg-gray-600 text-white'
+              }`}
+              disabled={!isRecording}
+            >
+              {isSampling ? '⏹ STOP SAMPLING' : '⏺ START SAMPLING'}
+            </button>
+          </div>
+  
           {/* Signal Combination Selector */}
           <button
             onClick={() => setShowConfig((prev) => !prev)}
@@ -188,25 +200,26 @@ export default function Home() {
               setSignalCombination={setSignalCombination}
             />
           )}
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          {/* Input Field */}
-          <input
-            type="text"
-            value={currentSubject}
-            onChange={(e) => setCurrentSubject(e.target.value)}
-            placeholder="Enter Subject ID"
-            className="border border-gray-300 rounded-md p-2"
-          />
-          {/* Confirm Button */}
-          <button
-            onClick={confirmUser}
-            className="bg-cyan-500 text-white px-4 py-2 rounded-md ml-2"
-          >
-            Confirm User
-          </button>
+  
+          {/* User Input Section */}
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <input
+              type="text"
+              value={currentSubject}
+              onChange={(e) => setCurrentSubject(e.target.value)}
+              placeholder="Enter Subject ID"
+              className="border border-gray-300 rounded-md p-2 w-full"
+            />
+            <button
+              onClick={confirmUser}
+              className="bg-cyan-500 text-white px-4 py-2 rounded-md mt-2 w-full"
+            >
+              Confirm User
+            </button>
+            
             {confirmedSubject && (
-              <div className="space-y-1">
-                <br></br>
+              <div className="space-y-1 mt-3">
+                <br />
                 {isNewUser ? (
                   <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
                     <p className="text-blue-700 font-medium">New User Detected</p>
@@ -237,12 +250,11 @@ export default function Home() {
             )}
           </div>
         </div>
+  
         {/* Right Column: Chart and Metrics */}
         <div className="space-y-4">
-          {/* Chart */}
           <ChartComponent ppgData={ppgData} valleys={valleys} />
-
-          {/* Save Data to MongoDB Button */}
+  
           <button
             onClick={handlePushData}
             disabled={isUploading}
@@ -252,24 +264,18 @@ export default function Home() {
           >
             {isUploading ? 'Saving...' : 'Save Data to MongoDB'}
           </button>
-
-          {/* Metrics Cards (Side by Side) */}
+  
           <div className="flex flex-wrap gap-4">
-            {/* Heart Rate Card */}
             <MetricsCard
               title="HEART RATE"
-              value={heartRate || {}} // Pass the HeartRateResult object
+              value={heartRate || {}}
               confidence={heartRate?.confidence || 0}
             />
-
-            {/* HRV Card */}
             <MetricsCard
               title="HRV"
-              value={hrv || {}} // Pass the HRVResult object
+              value={hrv || {}}
               confidence={hrv?.confidence || 0}
             />
-
-            {/* Signal Quality Card (Fallback for now) */}
             <MetricsCard
               title="Signal Quality"
               value={Number(signalQuality)}

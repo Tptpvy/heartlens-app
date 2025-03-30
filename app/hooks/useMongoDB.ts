@@ -27,8 +27,8 @@ export interface RecordData {
 export default function useMongoDB() {
   const [isUploading, setIsUploading] = useState(false);
   const [historicalData, setHistoricalData] = useState<HistoricalData>({
-    avgHeartRate: -1,
-    avgHRV: -1,
+    avgHeartRate: 0,
+    avgHRV: 0,
   });
   const [lastAccessDate, setLastAccessDate] = useState('Never');
   

@@ -17,6 +17,7 @@ export default function Home() {
   const [currentSubject, setCurrentSubject] = useState('');
   const [confirmedSubject, setConfirmedSubject] = useState('');
   const [lastAccess, setLastAccess] = useState('Never');
+  const [isNewUser, setIsNewUser] = useState(false);
 
   // Define refs for video and canvas
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -36,7 +37,7 @@ export default function Home() {
   const { isUploading, pushDataToMongo, fetchHistoricalData, fetchLastAccess, historicalData, lastAccessDate } = useMongoDB();
 
   // Confirm User Function
-  const confirmUser = useCallback(async () => {
+  const confirmUser = async () => {
     const subject = currentSubject.trim();
     if (subject) {
       setConfirmedSubject(subject);
@@ -48,7 +49,7 @@ export default function Home() {
     } else {
       alert('Please enter a valid Subject ID.');
     }
-  }, [currentSubject]);
+  };
 
   // Start or stop recording
   useEffect(() => {
@@ -77,10 +78,20 @@ export default function Home() {
   }, [isRecording, processFrame]);
 
   // Retrieve data from db
-  const handlePullData = useCallback(async () => {
+  const handlePullData = async () => {
+    if (!confirmedSubject) return;
+
     try {
       await fetchHistoricalData(confirmedSubject);
+      
+      if (historicalData.avgHeartRate == null || historicalData.avgHeartRate <= -1) {
+        setIsNewUser(true);
+        return;
+      }
+
+      setIsNewUser(false);
       await fetchLastAccess(confirmedSubject);
+      
       const dateObj = new Date(lastAccessDate);
       setLastAccess(dateObj.toLocaleString('en-US', {
         year: 'numeric',
@@ -90,13 +101,12 @@ export default function Home() {
         minute: '2-digit',
         second: '2-digit',
         timeZoneName: 'short'
-      }));
-    } catch {
-      console.error('Error fetching data');
-      alert('Failed to retrieve data. Please try again.');
-      setLastAccess('Never');
+      }))
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setIsNewUser(false);
     }
-  }, [confirmedSubject, fetchHistoricalData, fetchLastAccess, lastAccessDate]);
+  };
 
   // Store data to db
   const handlePushData = useCallback(async () => {
@@ -195,31 +205,38 @@ export default function Home() {
             Confirm User
           </button>
             {confirmedSubject && (
-            <div className="space-y-1">
-            <br></br>
-            {/* Historical Data Display */}
-            <p>
-              <strong>Last Access Date:</strong>
-              <span className="text-gray-500 ml-1">
-                {lastAccess === 'Never' ? 'Never' : lastAccess}
-              </span>
-            </p>
-            <p>
-              <strong>Average Heart Rate:</strong>
-              <span className="text-gray-500 ml-1">
-                {historicalData.avgHeartRate ?? 'N/A'} BPM
-              </span>
-            </p>
-            <p>
-              <strong>Average HRV:</strong>
-              <span className="text-gray-500 ml-1">
-                {historicalData.avgHRV ?? 'N/A'} ms
-              </span>
-            </p>
+              <div className="space-y-1">
+                <br></br>
+                {isNewUser ? (
+                  <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                    <p className="text-blue-700 font-medium">New User Detected</p>
+                  </div>
+                ) : (
+                  <>
+                    <p>
+                      <strong>Last Access Date:</strong>
+                      <span className="text-gray-500 ml-1">
+                        {lastAccess === 'Never' ? 'Never' : lastAccess}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Average Heart Rate:</strong>
+                      <span className="text-gray-500 ml-1">
+                        {historicalData.avgHeartRate ?? 'N/A'} BPM
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Average HRV:</strong>
+                      <span className="text-gray-500 ml-1">
+                        {historicalData.avgHRV ?? 'N/A'} ms
+                      </span>
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
-          )}</div>
-          </div>
-
+        </div>
         {/* Right Column: Chart and Metrics */}
         <div className="space-y-4">
           {/* Chart */}

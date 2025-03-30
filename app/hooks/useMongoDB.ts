@@ -74,10 +74,14 @@ export default function useMongoDB() {
       const result = await response.json();
       if (result.success) {
         setHistoricalData({
-          avgHeartRate: result.avgHeartRate || -2,
-          avgHRV: result.avgHRV || -2,
+          avgHeartRate: result.avgHeartRate || -3,
+          avgHRV: result.avgHRV || -3,
         });
       } else {
+        setHistoricalData({
+          avgHeartRate: -2,
+          avgHRV: -2,
+        });
         console.error('❌ Error:', result.error);
       }
     } catch (error) {

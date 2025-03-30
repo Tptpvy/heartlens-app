@@ -1,5 +1,5 @@
 // hooks/useSignalQuality.ts
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as tf from '@tensorflow/tfjs';
 
 interface SignalQualityResults {
@@ -28,13 +28,7 @@ export default function useSignalQuality(
     loadModel();
   }, []);
 
-  useEffect(() => {
-    if (ppgData.length >= 100) {
-      assessSignalQuality(ppgData);
-    }
-  }, [ppgData]);
-
-  const assessSignalQuality = async (signal: number[]) => {
+  const assessSignalQuality = useCallback(async (signal: number[]) => {
     if (!modelRef.current || signal.length < 100) return;
 
     try {
@@ -58,7 +52,13 @@ export default function useSignalQuality(
     } catch (error) {
       console.error('Error assessing signal quality:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (ppgData.length >= 100) {
+      assessSignalQuality(ppgData);
+    }
+  }, [ppgData, assessSignalQuality]);
 
   const calculateFeatures = (signal: number[]): number[] => {
     if (!signal.length) return new Array(8).fill(0);

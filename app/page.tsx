@@ -1,6 +1,6 @@
 // app/page.tsx
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import CameraFeed from './components/CameraFeed';
 import MetricsCard from './components/MetricsCard';
 import SignalCombinationSelector from './components/SignalCombinationSelector';
@@ -17,21 +17,6 @@ export default function Home() {
   const [currentSubject, setCurrentSubject] = useState('');
   const [confirmedSubject, setConfirmedSubject] = useState('');
   const [lastAccess, setLastAccess] = useState('Never');
-
-  // Confirm User Function
-  const confirmUser = async () => {
-    const subject = currentSubject.trim();
-    if (subject) {
-      setConfirmedSubject(subject);
-      try {
-        await handlePullData();
-      } catch (error) {
-        console.error('Error confirming user:', error);
-      }
-    } else {
-      alert('Please enter a valid Subject ID.');
-    }
-  };
 
   // Define refs for video and canvas
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -50,6 +35,21 @@ export default function Home() {
   const { signalQuality, qualityConfidence } = useSignalQuality(ppgData);
   const { isUploading, pushDataToMongo, fetchHistoricalData, fetchLastAccess, historicalData, lastAccessDate } = useMongoDB();
 
+  // Confirm User Function
+  const confirmUser = useCallback(async () => {
+    const subject = currentSubject.trim();
+    if (subject) {
+      setConfirmedSubject(subject);
+      try {
+        await handlePullData();
+      } catch (error) {
+        console.error('Error confirming user:', error);
+      }
+    } else {
+      alert('Please enter a valid Subject ID.');
+    }
+  }, [currentSubject]);
+
   // Start or stop recording
   useEffect(() => {
     if (isRecording) {
@@ -57,13 +57,14 @@ export default function Home() {
     } else {
       stopCamera();
     }
-  }, [isRecording]);
+  }, [isRecording, startCamera, stopCamera]);
 
+  // Process frame loop
   useEffect(() => {
     let animationFrame: number;
     const processFrameLoop = () => {
       if (isRecording) {
-        processFrame(); // Call the frame processing function
+        processFrame();
         animationFrame = requestAnimationFrame(processFrameLoop);
       }
     };
@@ -71,17 +72,16 @@ export default function Home() {
       processFrameLoop();
     }
     return () => {
-      cancelAnimationFrame(animationFrame); // Clean up animation frame on unmount
+      cancelAnimationFrame(animationFrame);
     };
-  }, [isRecording]);
+  }, [isRecording, processFrame]);
 
   // Retrieve data from db
-  const handlePullData = async () => {
+  const handlePullData = useCallback(async () => {
     try {
       await fetchHistoricalData(confirmedSubject);
       await fetchLastAccess(confirmedSubject);
       const dateObj = new Date(lastAccessDate);
-      // Reformat date
       setLastAccess(dateObj.toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -91,15 +91,15 @@ export default function Home() {
         second: '2-digit',
         timeZoneName: 'short'
       }));
-    } catch (error) {
-      console.error('Error fetching data:', error); // debug
+    } catch {
+      console.error('Error fetching data');
       alert('Failed to retrieve data. Please try again.');
       setLastAccess('Never');
-  }
-  }
+    }
+  }, [confirmedSubject, fetchHistoricalData, fetchLastAccess, lastAccessDate]);
 
   // Store data to db
-  const handlePushData = async () => {
+  const handlePushData = useCallback(async () => {
     if (!isSampling || ppgData.length === 0) {
       alert('No data to save. Please capture data first.');
       return;
@@ -123,10 +123,10 @@ export default function Home() {
       
       await pushDataToMongo(recordData);
       alert('Data saved successfully!');
-    } catch (error) {
+    } catch {
       alert('Failed to save data. Please try again.');
     }
-  };
+  }, [isSampling, ppgData, confirmedSubject, heartRate, hrv, qualityConfidence, pushDataToMongo]);
   
   return (
     <div className="flex flex-col items-center p-4">

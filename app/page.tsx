@@ -16,6 +16,7 @@ export default function Home() {
   const [showConfig, setShowConfig] = useState(false);
   const [currentSubject, setCurrentSubject] = useState('');
   const [confirmedSubject, setConfirmedSubject] = useState('');
+  const [lastAccess, setLastAccess] = useState('Never');
   const [isNewUser, setIsNewUser] = useState(false);
 
   // Define refs for video and canvas
@@ -228,7 +229,7 @@ export default function Home() {
                     <p>
                       <strong>Last Access Date:</strong>
                       <span className="text-gray-500 ml-1">
-                        {lastAccessDate === 'Never' ? 'Never' : lastAccessDate}
+                        {lastAccessDate === 'Never' ? 'Never' : lastAccess}
                       </span>
                     </p>
                     <p>
@@ -277,7 +278,7 @@ export default function Home() {
             />
             <MetricsCard
               title="Signal Quality"
-              value={Number(signalQuality)}
+              value={signalQuality}
               confidence={qualityConfidence}
             />
           </div>

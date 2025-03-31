@@ -1,6 +1,6 @@
 interface MetricsCardProps {
   title: string;
-  value: number | { bpm?: number; sdnn?: number }; // Support for structured types
+  value: string | { bpm?: number; sdnn?: number }; // Support for structured types
   unit?: string;
   confidence?: number; // Optional confidence for cases where it's not needed
 }

@@ -27,8 +27,8 @@ export interface RecordData {
 export default function useMongoDB() {
   const [isUploading, setIsUploading] = useState(false);
   const [historicalData, setHistoricalData] = useState<HistoricalData>({
-    avgHeartRate: 0,
-    avgHRV: 0,
+    avgHeartRate: -1,
+    avgHRV: -1,
   });
   const [lastAccessDate, setLastAccessDate] = useState('Never');
   
@@ -37,7 +37,7 @@ export default function useMongoDB() {
     if (isUploading) return;
     setIsUploading(true);
     try {
-      const response = await fetch('/api/handle-record', {
+      const response = await fetch('/api/save-record', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(recordData),
@@ -103,7 +103,7 @@ export default function useMongoDB() {
       
       if (result.success) {
         return setLastAccessDate(result.lastAccess);
-      }
+      } else {setLastAccessDate("Never");}
       throw new Error(result.error || 'Failed to fetch last access');
     } catch (error) {
       console.error('Error fetching last access:', error);

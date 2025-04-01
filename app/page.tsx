@@ -16,7 +16,6 @@ export default function Home() {
   const [showConfig, setShowConfig] = useState(false);
   const [currentSubject, setCurrentSubject] = useState('');
   const [confirmedSubject, setConfirmedSubject] = useState('');
-  const [lastAccess, setLastAccess] = useState('Never');
   const [isNewUser, setIsNewUser] = useState(false);
 
   // Define refs for video and canvas
@@ -44,7 +43,7 @@ export default function Home() {
       setConfirmedSubject(subject);
       console.log('subject set');
       try {
-        await handlePullData();
+        await handlePullData(subject);
         console.log('handPullData complete');
       } catch (error) {
         console.error('Error confirming user:', error);
@@ -81,32 +80,27 @@ export default function Home() {
   }, [isRecording, processFrame]);
 
   // Retrieve data from db
-  const handlePullData = async () => {
-    if (!confirmedSubject) {
-      console.log('subject not found'); // debug
-      return;}
+  const handlePullData = async (subject: string) => {
+    console.log("handlePullData called for subject:", subject); // debug
+    if (!subject) {
+      console.log("subject not found"); // debug
+      return;
+    }
     try {
-      await fetchHistoricalData(confirmedSubject);
-      await fetchLastAccess(confirmedSubject);
-      console.log('fetchHistoricalData done'); // debug
-      console.log('fetchLastAccess done');
-      if (historicalData.avgHeartRate == null || historicalData.avgHeartRate <= 0) {
-        console.log('no data found for subject'); // debug
-        setIsNewUser(true);
+      await fetchHistoricalData(subject);
+      await fetchLastAccess(subject);
+      console.log("fetchHistoricalData done"); // debug
+      console.log("fetchLastAccess done");
+      if (
+        historicalData.avgHeartRate == null ||  // NOT UPDATED
+        historicalData.avgHeartRate <= 0
+      ) {
+        console.log("no data found for subject"); // debug
+        // setIsNewUser(true);
         return;
       }
       console.log('subject data found'); // debug
       setIsNewUser(false);
-      const dateObj = new Date(lastAccessDate);
-      setLastAccess(dateObj.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZoneName: 'short'
-      }))
     } catch (error) {
       console.error('Error fetching data:', error);
       setIsNewUser(true);
@@ -229,7 +223,7 @@ export default function Home() {
                     <p>
                       <strong>Last Access Date:</strong>
                       <span className="text-gray-500 ml-1">
-                        {lastAccessDate === 'Never' ? 'Never' : lastAccess}
+                        {lastAccessDate === 'Never' ? 'Never' : lastAccessDate}
                       </span>
                     </p>
                     <p>

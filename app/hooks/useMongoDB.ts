@@ -102,7 +102,17 @@ export default function useMongoDB() {
       const result = await response.json();
       
       if (result.success) {
-        return setLastAccessDate(result.lastAccess);
+        const dateObj = new Date(result.lastAccess);
+        const formattedDate = dateObj.toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short'
+        });
+        return setLastAccessDate(formattedDate);
       } else {setLastAccessDate("Never");}
       throw new Error(result.error || 'Failed to fetch last access');
     } catch (error) {

@@ -108,15 +108,26 @@ export default function Home() {
   };
 
   // Store data to db
-  const handlePushData = useCallback(async () => {
+  const handlePushData = async () => {
+    console.log("handlePushData called"); // debug
+    
     if (!isSampling || ppgData.length === 0) {
+      console.log("No data to save - isSampling:", isSampling, "ppgData length:", ppgData.length); // debug
       alert('No data to save. Please capture data first.');
       return;
-    } 
-
+    }
+  
+    if (!confirmedSubject) {
+      console.log("No subject confirmed"); // debug
+      alert('Please confirm user first');
+      return;
+    }
+  
     try {
+      console.log("Preparing to save data for subject:", confirmedSubject); // debug
+      
       const recordData = {
-        subjectId: confirmedSubject || 'unknown',
+        subjectId: confirmedSubject,
         heartRate: {
           bpm: isNaN(heartRate.bpm) ? 0 : heartRate.bpm,
           confidence: heartRate.confidence || 0,
@@ -127,15 +138,18 @@ export default function Home() {
         },
         ppgData: ppgData,
         timestamp: new Date(),
-        signalQuality: qualityConfidence,
       };
+  
+      console.log("Record data prepared:", recordData); // debug
       
       await pushDataToMongo(recordData);
+      console.log("Data saved successfully"); // debug
       alert('Data saved successfully!');
-    } catch {
+    } catch (error) {
+      console.error('Error saving data:', error); // debug
       alert('Failed to save data. Please try again.');
     }
-  }, [isSampling, ppgData, confirmedSubject, heartRate, hrv, qualityConfidence, pushDataToMongo]);
+  };
   
   return (
     <div className="flex flex-col items-center p-4">

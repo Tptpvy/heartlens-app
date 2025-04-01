@@ -278,8 +278,8 @@ export default function Home() {
             />
             <MetricsCard
               title="Signal Quality"
-              value={signalQuality}
-              confidence={qualityConfidence}
+              stringValue={signalQuality || '--'}
+              confidence={qualityConfidence || 0}
             />
           </div>
         </div>

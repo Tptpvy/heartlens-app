@@ -40,7 +40,7 @@ export default function useSignalQuality(
       const probabilities = await prediction.data();
 
       const classIndex = probabilities.indexOf(Math.max(...probabilities));
-      const classes = ['bad', 'acceptable', 'excellent'];
+      const classes = ['Bad', 'Acceptable', 'Excellent'];
       const predictedClass = classes[classIndex];
       const confidence = probabilities[classIndex] * 100;
 
